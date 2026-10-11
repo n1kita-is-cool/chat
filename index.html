@@ -1,19 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>My Chat Website</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Simple Live Chat</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        #chat-box { width: 100%; max-width: 400px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 4px; background: #fafafa; }
+        .msg { margin-bottom: 8px; padding: 6px 10px; border-radius: 4px; background: #e1f5fe; word-break: break-word; }
+        .input-area { display: flex; gap: 8px; }
+        input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
 
-  <h1>Welcome to My Website</h1>
-  <p>Click the TogetherJS button in the corner to chat with anyone else on this page!</p>
+    <h2>Live Community Chat 💬</h2>
+    
+    <div id="chat-box">
+        <!-- Messages will appear here -->
+        <div id="messages"></div>
+        
+        <!-- Input fields -->
+        <div class="input-area">
+            <input type="text" id="username" placeholder="Your Name" style="width: 80px; flex: none;">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
-  <!-- TogetherJS Script -->
-  <script>
-    var TogetherJSConfig_autoStart = true;
-  </script>
-  <script src="https://togetherjs.com/togetherjs-min.js"></script>
+    <!-- Load the Firebase Library from a CDN -->
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, push, onChildAdded } from "https://gstatic.com";
 
+        // ⚠️ INSTRUCTIONS: You will replace this configuration object in Step 2!
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_://firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_://firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_://appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase and Database
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const messagesRef = ref(db, 'chats');
+
+        // Send message to Firebase
+        window.sendMessage = function() {
+            const name = document.getElementById('username').value.trim() || "Anonymous";
+            const text = document.getElementById('messageInput').value.trim();
+            
+            if (text !== "") {
+                push(messagesRef, {
+                    username: name,
+                    message: text,
+                    timestamp: Date.now()
+                });
+                document.getElementById('messageInput').value = ""; // Clear input
+            }
+        }
+
+        // Listen for new messages in real-time
+        onChildAdded(messagesRef, (data) => {
+            const chat = data.val();
+            const messagesDiv = document.getElementById('messages');
+            
+            const msgElement = document.createElement('div');
+            msgElement.className = 'msg';
+            msgElement.innerHTML = `<strong>${chat.username}:</strong> ${chat.message}`;
+            
+            messagesDiv.appendChild(msgElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to bottom
+        });
+
+        // Allow pressing "Enter" to send
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
 </body>
 </html>
